@@ -1,0 +1,51 @@
+student_id,code_module,code_presentation,gender,region,highest_education,imd_band,age_band,disability,studied_credits,num_of_prev_attempts,avg_score,std_score,min_score,max_score,num_assessments,avg_submission_date,std_submission_date,score_range,total_clicks,avg_clicks,std_clicks,max_clicks,num_interactions,first_access,last_access,access_duration,avg_registration_date,num_unregistrations
+S001,AAA,2013J,M,East Anglian Region,HE Qualification,20-30%,35-55,N,60,0,82,12,65,95,8,95,25,30,1250,125,35,220,18,5,210,205,-15,0
+S002,BBB,2014J,F,Scotland,Post Graduate Qualification,60-70%,0-35,N,120,0,88,8,75,98,10,80,20,23,1580,158,42,285,22,3,215,212,-20,0
+S003,CCC,2013B,M,North Western Region,A Level or Equivalent,40-50%,35-55,N,60,1,45,18,20,70,6,145,45,50,380,63,28,145,9,45,180,135,-10,0
+S004,DDD,2014B,F,South East Region,Lower Than A Level,10-20%,0-35,Y,30,2,32,15,10,55,4,175,50,45,220,55,22,98,6,85,165,80,-5,1
+S005,AAA,2013J,M,West Midlands Region,HE Qualification,30-40%,35-55,N,60,0,76,14,55,92,7,100,30,37,920,131,38,195,15,10,200,190,-12,0
+S006,EEE,2014J,F,East Anglian Region,Post Graduate Qualification,70-80%,55<=,N,120,0,91,6,82,100,9,75,18,18,1720,191,45,310,24,2,220,218,-25,0
+S007,BBB,2013B,M,Scotland,HE Qualification,50-60%,35-55,N,90,0,68,16,45,88,8,110,35,43,785,98,32,175,14,15,195,180,-8,0
+S008,FFF,2014B,F,North Western Region,A Level or Equivalent,20-30%,0-35,N,60,3,28,12,8,48,5,185,55,40,195,39,18,82,5,95,170,75,0,2
+S009,AAA,2013J,M,South East Region,HE Qualification,40-50%,35-55,N,60,0,95,5,88,100,8,70,15,12,185,23,12,45,3,8,205,197,-18,0
+S010,GGG,2014J,F,West Midlands Region,Lower Than A Level,0-10%,0-35,Y,30,1,38,20,12,65,4,168,48,53,285,71,25,128,7,72,175,103,-3,1
+S011,CCC,2013B,M,East Anglian Region,A Level or Equivalent,30-40%,35-55,N,60,0,72,13,52,89,7,105,28,37,845,120,36,188,13,12,198,186,-10,0
+S012,AAA,2014B,F,Scotland,Post Graduate Qualification,80-90%,55<=,N,120,0,85,9,70,96,9,88,22,26,1420,157,40,265,20,4,218,214,-22,0
+S013,BBB,2013J,M,North Western Region,HE Qualification,50-60%,35-55,N,90,1,55,19,28,82,7,138,42,54,520,74,30,152,11,38,185,147,-6,0
+S014,DDD,2014J,F,South East Region,A Level or Equivalent,20-30%,0-35,N,60,2,42,17,18,68,6,158,46,50,345,57,24,118,8,58,178,120,-4,1
+S015,EEE,2013B,M,West Midlands Region,HE Qualification,60-70%,35-55,N,120,0,79,11,62,94,8,92,26,32,1085,135,37,225,17,8,205,197,-14,0
+S016,AAA,2014B,F,East Anglian Region,Post Graduate Qualification,70-80%,55<=,N,120,0,93,4,86,99,10,72,16,13,1650,165,44,295,23,3,222,219,-23,0
+S017,FFF,2013J,M,Scotland,Lower Than A Level,10-20%,0-35,Y,30,3,25,14,5,42,3,192,58,37,158,52,20,88,4,105,168,63,5,2
+S018,BBB,2014J,F,North Western Region,A Level or Equivalent,40-50%,35-55,N,60,0,64,15,42,85,7,118,33,43,685,97,33,168,12,22,192,170,-9,0
+S019,CCC,2013B,M,South East Region,HE Qualification,30-40%,35-55,N,60,0,88,7,78,97,8,82,20,19,1350,168,41,248,19,6,208,202,-16,0
+S020,GGG,2014B,F,West Midlands Region,A Level or Equivalent,20-30%,0-35,N,60,1,48,18,22,72,6,148,44,50,425,70,27,135,9,48,182,134,-5,0
+S021,AAA,2013J,M,East Anglian Region,Post Graduate Qualification,90-100%,55<=,N,120,0,96,3,92,100,9,68,14,8,1580,175,43,285,21,2,220,218,-24,0
+S022,EEE,2014J,F,Scotland,HE Qualification,60-70%,35-55,N,120,0,81,10,66,95,9,90,24,29,1185,131,38,235,18,7,212,205,-17,0
+S023,BBB,2013B,M,North Western Region,Lower Than A Level,10-20%,0-35,Y,30,2,35,16,12,58,5,172,52,46,255,51,21,105,6,82,172,90,-2,1
+S024,DDD,2014B,F,South East Region,A Level or Equivalent,30-40%,35-55,N,60,0,58,17,32,80,7,128,38,48,595,85,31,155,11,28,188,160,-7,0
+S025,AAA,2013J,M,West Midlands Region,HE Qualification,50-60%,35-55,N,60,0,74,13,56,90,7,102,29,34,875,125,36,192,14,14,202,188,-11,0
+S026,FFF,2014J,F,East Anglian Region,Post Graduate Qualification,80-90%,55<=,N,120,0,89,8,76,98,9,78,19,22,1485,165,42,272,21,4,216,212,-21,0
+S027,CCC,2013B,M,Scotland,A Level or Equivalent,40-50%,35-55,N,60,1,52,19,26,78,6,142,43,52,485,80,29,148,10,42,183,141,-6,0
+S028,BBB,2014B,F,North Western Region,HE Qualification,20-30%,0-35,N,90,0,70,14,48,88,8,108,31,40,795,99,34,178,13,18,196,178,-10,0
+S029,AAA,2013J,M,South East Region,Lower Than A Level,0-10%,0-35,Y,30,3,22,13,4,38,3,195,60,34,142,47,19,75,4,110,165,55,8,2
+S030,GGG,2014J,F,West Midlands Region,A Level or Equivalent,30-40%,35-55,N,60,0,61,16,38,84,7,122,36,46,625,89,32,162,11,25,190,165,-8,0
+S031,EEE,2013B,M,East Anglian Region,Post Graduate Qualification,70-80%,55<=,N,120,0,92,5,84,99,10,74,17,15,1620,162,43,288,22,3,218,215,-22,0
+S032,AAA,2014B,F,Scotland,HE Qualification,60-70%,35-55,N,60,0,77,12,58,93,8,98,27,35,965,120,37,205,15,11,203,192,-13,0
+S033,BBB,2013J,M,North Western Region,A Level or Equivalent,40-50%,35-55,N,60,2,40,18,15,65,5,165,49,50,325,65,26,125,8,68,176,108,-3,1
+S034,DDD,2014J,F,South East Region,Lower Than A Level,10-20%,0-35,Y,30,1,30,15,8,52,4,180,54,44,210,52,22,95,6,88,170,82,0,1
+S035,AAA,2013B,M,West Midlands Region,HE Qualification,50-60%,35-55,N,60,0,86,9,72,96,8,85,23,24,1285,160,40,242,18,7,210,203,-15,0
+S036,FFF,2014B,F,East Anglian Region,Post Graduate Qualification,80-90%,55<=,N,120,0,94,4,88,100,9,71,15,12,1695,188,45,305,24,2,221,219,-24,0
+S037,CCC,2013J,M,Scotland,A Level or Equivalent,30-40%,35-55,N,60,1,56,18,30,82,7,135,40,52,545,77,30,158,10,35,186,151,-7,0
+S038,BBB,2014J,F,North Western Region,HE Qualification,60-70%,35-55,N,90,0,83,10,68,95,9,87,25,27,1155,128,38,228,17,9,208,199,-16,0
+S039,AAA,2013B,M,South East Region,A Level or Equivalent,20-30%,0-35,N,60,0,97,2,94,100,8,65,12,6,142,17,10,38,2,5,208,203,-19,0
+S040,GGG,2014B,F,West Midlands Region,Lower Than A Level,0-10%,0-35,Y,30,2,26,14,6,45,4,188,56,39,175,43,20,82,5,98,168,70,3,2
+S041,EEE,2013J,M,East Anglian Region,Post Graduate Qualification,90-100%,55<=,N,120,0,90,6,80,98,9,76,18,18,1545,171,43,282,22,4,217,213,-23,0
+S042,AAA,2014J,F,Scotland,HE Qualification,70-80%,35-55,N,60,0,75,13,54,91,7,104,30,37,895,127,36,198,14,13,201,188,-12,0
+S043,BBB,2013B,M,North Western Region,A Level or Equivalent,40-50%,35-55,N,60,2,44,17,20,70,6,162,47,50,365,60,25,132,8,62,179,117,-4,1
+S044,DDD,2014B,F,South East Region,HE Qualification,30-40%,0-35,N,60,0,66,15,44,86,7,115,34,42,725,103,33,172,12,20,194,174,-9,0
+S045,AAA,2013J,M,West Midlands Region,Post Graduate Qualification,80-90%,55<=,N,120,0,87,8,74,97,9,83,21,23,1385,153,41,258,19,5,214,209,-18,0
+S046,FFF,2014J,F,East Anglian Region,Lower Than A Level,10-20%,0-35,Y,30,3,28,13,9,48,4,185,55,39,188,47,20,88,5,92,172,80,2,2
+S047,CCC,2013B,M,Scotland,A Level or Equivalent,50-60%,35-55,N,60,0,69,14,49,87,7,112,32,38,765,109,34,182,13,17,197,180,-10,0
+S048,BBB,2014B,F,North Western Region,HE Qualification,60-70%,35-55,N,90,0,80,11,64,94,8,94,26,30,1095,136,38,218,16,10,206,196,-15,0
+S049,AAA,2013J,M,South East Region,Post Graduate Qualification,70-80%,55<=,N,120,0,98,1,96,100,10,67,13,4,1725,172,44,298,23,2,222,220,-25,0
+S050,GGG,2014J,F,West Midlands Region,A Level or Equivalent,20-30%,0-35,N,60,1,50,18,24,75,6,145,44,51,455,75,28,142,9,45,184,139,-6,0

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Anomaly Detection System</title>
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+
+      const StudentAnomalyDetector = () => {
+        const [mode, setMode] = useState("single"); // 'single' or 'batch'
+        const [formData, setFormData] = useState({
+          code_module: "AAA",
+          code_presentation: "2013J",
+          gender: "M",
+          region: "East Anglian Region",
+          highest_education: "HE Qualification",
+          imd_band: "20-30%",
+          age_band: "35-55",
+          disability: "N",
+          studied_credits: 60,
+          num_of_prev_attempts: 0,
+          avg_score: 50,
+          std_score: 15,
+          min_score: 20,
+          max_score: 85,
+          num_assessments: 5,
+          avg_submission_date: 100,
+          std_submission_date: 30,
+          score_range: 65,
+          total_clicks: 500,
+          avg_clicks: 50,
+          std_clicks: 20,
+          max_clicks: 150,
+          num_interactions: 10,
+          first_access: 10,
+          last_access: 200,
+          access_duration: 190,
+          avg_registration_date: -15,
+          num_unregistrations: 0,
+        });
+
+        const [prediction, setPrediction] = useState(null);
+        const [batchResults, setBatchResults] = useState(null);
+        const [loading, setLoading] = useState(false);
+        const [apiStatus, setApiStatus] = useState("checking");
+        const [activeTab, setActiveTab] = useState("demographics");
+        const [csvFile, setCsvFile] = useState(null);
+
+        useEffect(() => {
+          checkApiStatus();
+        }, []);
+
+        const checkApiStatus = async () => {
+          try {
+            const response = await fetch("http://localhost:5000/");
+            if (response.ok) {
+              setApiStatus("connected");
+            } else {
+              setApiStatus("error");
+            }
+          } catch (error) {
+            setApiStatus("disconnected");
+          }
+        };
+
+        const predictAnomaly = async () => {
+          setLoading(true);
+          try {
+            const API_URL = "http://localhost:5000";
+            const payload = {
+              ...formData,
+              studied_credits: parseFloat(formData.studied_credits) || 0,
+              num_of_prev_attempts:
+                parseInt(formData.num_of_prev_attempts) || 0,
+              avg_score: parseFloat(formData.avg_score) || 0,
+              std_score: parseFloat(formData.std_score) || 0,
+              min_score: parseFloat(formData.min_score) || 0,
+              max_score: parseFloat(formData.max_score) || 0,
+              num_assessments: parseInt(formData.num_assessments) || 0,
+              avg_submission_date:
+                parseFloat(formData.avg_submission_date) || 0,
+              std_submission_date:
+                parseFloat(formData.std_submission_date) || 0,
+              score_range: parseFloat(formData.score_range) || 0,
+              total_clicks: parseInt(formData.total_clicks) || 0,
+              avg_clicks: parseFloat(formData.avg_clicks) || 0,
+              std_clicks: parseFloat(formData.std_clicks) || 0,
+              max_clicks: parseInt(formData.max_clicks) || 0,
+              num_interactions: parseInt(formData.num_interactions) || 0,
+              first_access: parseInt(formData.first_access) || 0,
+              last_access: parseInt(formData.last_access) || 0,
+              access_duration: parseInt(formData.access_duration) || 0,
+              avg_registration_date:
+                parseFloat(formData.avg_registration_date) || 0,
+              num_unregistrations: parseInt(formData.num_unregistrations) || 0,
+            };
+
+            const response = await fetch(`${API_URL}/predict`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`API error ${response.status}: ${errorText}`);
+            }
+
+            const data = await response.json();
+            setPrediction({
+              isAnomaly: data.isAtRisk,
+              riskScore: data.riskScore / 100,
+              anomalyScore: data.anomalyScore,
+              confidence: data.confidence,
+              factors: data.riskFactors || [],
+              recommendation: data.recommendation,
+            });
+          } catch (error) {
+            alert(`Failed to get prediction!\n\nError: ${error.message}`);
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        const handleCsvUpload = (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            setCsvFile(file);
+            setBatchResults(null);
+          }
+        };
+
+        const processBatchPredictions = async () => {
+          if (!csvFile) {
+            alert("Please select a CSV file first!");
+            return;
+          }
+
+          setLoading(true);
+          try {
+            Papa.parse(csvFile, {
+              header: true,
+              dynamicTyping: true,
+              skipEmptyLines: true,
+              complete: async (results) => {
+                console.log("Parsed CSV data:", results.data);
+
+                const API_URL = "http://localhost:5000";
+                const response = await fetch(`${API_URL}/predict_batch`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ students: results.data }),
+                });
+
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  throw new Error(`API error ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                setBatchResults(data);
+                setLoading(false);
+              },
+              error: (error) => {
+                alert(`CSV parsing error: ${error.message}`);
+                setLoading(false);
+              },
+            });
+          } catch (error) {
+            alert(`Batch prediction failed!\n\nError: ${error.message}`);
+            setLoading(false);
+          }
+        };
+
+        const downloadResults = () => {
+          if (!batchResults) return;
+
+          const csv = Papa.unparse(batchResults.predictions);
+          const blob = new Blob([csv], { type: "text/csv" });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `student_predictions_${Date.now()}.csv`;
+          a.click();
+        };
+
+        const handleInputChange = (e) => {
+          const { name, value } = e.target;
+          setFormData((prev) => ({ ...prev, [name]: value }));
+        };
+
+        const loadSampleData = (type) => {
+          if (type === "risk") {
+            setFormData({
+              ...formData,
+              avg_score: 35,
+              total_clicks: 150,
+              num_assessments: 3,
+              num_of_prev_attempts: 2,
+              avg_submission_date: 180,
+              num_interactions: 5,
+              first_access: 100,
+              min_score: 15,
+              max_score: 55,
+              score_range: 40,
+            });
+          } else if (type === "normal") {
+            setFormData({
+              ...formData,
+              avg_score: 75,
+              total_clicks: 850,
+              num_assessments: 8,
+              num_of_prev_attempts: 0,
+              avg_submission_date: 90,
+              num_interactions: 15,
+              first_access: 10,
+              min_score: 60,
+              max_score: 95,
+              score_range: 35,
+            });
+          } else if (type === "cheater") {
+            setFormData({
+              ...formData,
+              avg_score: 95,
+              total_clicks: 120,
+              num_assessments: 4,
+              num_of_prev_attempts: 0,
+              avg_submission_date: 200,
+              num_interactions: 3,
+              min_score: 90,
+              max_score: 100,
+            });
+          }
+          setPrediction(null);
+        };
+
+        const getApiStatusBadge = () => {
+          const badges = {
+            connected: {
+              color: "bg-green-500",
+              text: "API Connected ✓",
+              bgColor: "bg-green-50",
+            },
+            disconnected: {
+              color: "bg-red-500",
+              text: "API Disconnected ✗",
+              bgColor: "bg-red-50",
+            },
+            checking: {
+              color: "bg-yellow-500",
+              text: "Checking...",
+              bgColor: "bg-yellow-50",
+            },
+            error: {
+              color: "bg-red-500",
+              text: "API Error",
+              bgColor: "bg-red-50",
+            },
+          };
+          const badge = badges[apiStatus];
+          return (
+            <div
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg ${badge.bgColor}`}
+            >
+              <div
+                className={`w-2 h-2 rounded-full ${badge.color} ${
+                  apiStatus === "checking" ? "animate-pulse" : ""
+                }`}
+              ></div>
+              <span className="text-sm font-medium text-gray-700">
+                {badge.text}
+              </span>
+            </div>
+          );
+        };
+
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+            <div className="max-w-7xl mx-auto">
+              {/* Header */}
+              <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                      🎓 Student At-Risk Detection System
+                    </h1>
+                    <p className="text-gray-600">
+                      AI-powered early warning system for online education
+                    </p>
+                  </div>
+                  <div className="text-6xl">📊</div>
+                </div>
+
+                {getApiStatusBadge()}
+
+                {/* Mode Toggle */}
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={() => {
+                      setMode("single");
+                      setPrediction(null);
+                      setBatchResults(null);
+                    }}
+                    className={`flex-1 py-3 rounded-lg font-semibold transition ${
+                      mode === "single"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    👤 Single Student
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMode("batch");
+                      setPrediction(null);
+                      setBatchResults(null);
+                    }}
+                    className={`flex-1 py-3 rounded-lg font-semibold transition ${
+                      mode === "batch"
+                        ? "bg-purple-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    📁 Batch Upload (CSV)
+                  </button>
+                </div>
+              </div>
+
+              {mode === "single" ? (
+                /* Single Student Mode */
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-2xl font-bold text-gray-800">
+                        📝 Student Information
+                      </h2>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => loadSampleData("risk")}
+                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                        >
+                          🚨 At-Risk
+                        </button>
+                        <button
+                          onClick={() => loadSampleData("normal")}
+                          className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
+                        >
+                          ✅ Normal
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mb-6 border-b overflow-x-auto">
+                      {[
+                        "demographics",
+                        "academic",
+                        "engagement",
+                        "registration",
+                      ].map((tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => setActiveTab(tab)}
+                          className={`px-4 py-2 font-medium capitalize transition-colors whitespace-nowrap ${
+                            activeTab === tab
+                              ? "text-blue-600 border-b-2 border-blue-600"
+                              : "text-gray-500 hover:text-gray-700"
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+
+                    {activeTab === "demographics" && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Average Score
+                          </label>
+                          <input
+                            type="number"
+                            name="avg_score"
+                            value={formData.avg_score}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Total Clicks
+                          </label>
+                          <input
+                            type="number"
+                            name="total_clicks"
+                            value={formData.total_clicks}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={predictAnomaly}
+                      disabled={loading || apiStatus !== "connected"}
+                      className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50"
+                    >
+                      {loading ? "⏳ Analyzing..." : "🔍 Predict Risk Level"}
+                    </button>
+                  </div>
+
+                  <div className="space-y-6">
+                    {prediction && (
+                      <div
+                        className={`bg-white rounded-2xl shadow-lg p-6 ${
+                          prediction.isAnomaly
+                            ? "ring-2 ring-red-500"
+                            : "ring-2 ring-green-500"
+                        }`}
+                      >
+                        <h3 className="text-xl font-bold mb-4">
+                          Prediction Result
+                        </h3>
+                        <div
+                          className={`text-center py-6 rounded-xl ${
+                            prediction.isAnomaly ? "bg-red-50" : "bg-green-50"
+                          }`}
+                        >
+                          <div
+                            className={`text-4xl font-bold ${
+                              prediction.isAnomaly
+                                ? "text-red-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {prediction.isAnomaly ? "AT RISK ⚠️" : "ON TRACK ✓"}
+                          </div>
+                          <div className="text-lg mt-2">
+                            Risk: {(prediction.riskScore * 100).toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Batch Upload Mode */
+                <div className="bg-white rounded-2xl shadow-lg p-8">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-6">
+                    📁 Batch Student Analysis
+                  </h2>
+
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 mb-6 text-center">
+                    <div className="text-6xl mb-4">📄</div>
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleCsvUpload}
+                        className="hidden"
+                      />
+                      <span className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 inline-block">
+                        {csvFile
+                          ? `Selected: ${csvFile.name}`
+                          : "Choose CSV File"}
+                      </span>
+                    </label>
+                    <p className="text-sm text-gray-600 mt-4">
+                      Upload a CSV file with student data
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={processBatchPredictions}
+                    disabled={!csvFile || loading || apiStatus !== "connected"}
+                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 disabled:opacity-50"
+                  >
+                    {loading ? "⏳ Processing..." : "🚀 Analyze All Students"}
+                  </button>
+
+                  {batchResults && (
+                    <div className="mt-8">
+                      <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-bold">
+                          📊 Analysis Results
+                        </h3>
+                        <button
+                          onClick={downloadResults}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        >
+                          ⬇️ Download CSV
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-4 mb-6">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <div className="text-3xl font-bold text-blue-600">
+                            {batchResults.summary.total_students}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            Total Students
+                          </div>
+                        </div>
+                        <div className="bg-red-50 p-4 rounded-lg">
+                          <div className="text-3xl font-bold text-red-600">
+                            {batchResults.summary.at_risk_count}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            At Risk ({batchResults.summary.at_risk_percentage}%)
+                          </div>
+                        </div>
+                        <div className="bg-orange-50 p-4 rounded-lg">
+                          <div className="text-3xl font-bold text-orange-600">
+                            {batchResults.summary.high_risk_count}
+                          </div>
+                          <div className="text-sm text-gray-600">High Risk</div>
+                        </div>
+                        <div className="bg-yellow-50 p-4 rounded-lg">
+                          <div className="text-3xl font-bold text-yellow-600">
+                            {batchResults.summary.medium_risk_count}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            Medium Risk
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="max-h-96 overflow-auto border rounded-lg">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50 sticky top-0">
+                            <tr>
+                              <th className="px-4 py-3 text-left">
+                                Student ID
+                              </th>
+                              <th className="px-4 py-3 text-left">Status</th>
+                              <th className="px-4 py-3 text-left">
+                                Risk Score
+                              </th>
+                              <th className="px-4 py-3 text-left">
+                                Risk Level
+                              </th>
+                              <th className="px-4 py-3 text-left">Avg Score</th>
+                              <th className="px-4 py-3 text-left">
+                                Engagement
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {batchResults.predictions.map((pred, idx) => (
+                              <tr
+                                key={idx}
+                                className="border-t hover:bg-gray-50"
+                              >
+                                <td className="px-4 py-3">{pred.student_id}</td>
+                                <td className="px-4 py-3">
+                                  {pred.isAtRisk ? (
+                                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">
+                                      ⚠️ At Risk
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">
+                                      ✓ On Track
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 font-semibold">
+                                  {pred.riskScore.toFixed(1)}%
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span
+                                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                                      pred.riskLevel === "High"
+                                        ? "bg-red-100 text-red-700"
+                                        : pred.riskLevel === "Medium"
+                                        ? "bg-yellow-100 text-yellow-700"
+                                        : "bg-green-100 text-green-700"
+                                    }`}
+                                  >
+                                    {pred.riskLevel}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3">{pred.avg_score}%</td>
+                                <td className="px-4 py-3">
+                                  {pred.total_clicks} clicks
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<StudentAnomalyDetector />);
+    </script>
+  </body>
+</html>

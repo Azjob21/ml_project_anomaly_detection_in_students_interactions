@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Anomaly Detection System</title>
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+
+      const StudentAnomalyDetector = () => {
+        const [formData, setFormData] = useState({
+          // Categorical features
+          code_module: "AAA",
+          code_presentation: "2013J",
+          gender: "M",
+          region: "East Anglian Region",
+          highest_education: "HE Qualification",
+          imd_band: "20-30%",
+          age_band: "35-55",
+          disability: "N",
+
+          // Numeric features
+          studied_credits: 60,
+          num_of_prev_attempts: 0,
+
+          // Assessment features
+          avg_score: 50,
+          std_score: 15,
+          min_score: 20,
+          max_score: 85,
+          num_assessments: 5,
+          avg_submission_date: 100,
+          std_submission_date: 30,
+          score_range: 65,
+
+          // Engagement features
+          total_clicks: 500,
+          avg_clicks: 50,
+          std_clicks: 20,
+          max_clicks: 150,
+          num_interactions: 10,
+          first_access: 10,
+          last_access: 200,
+          access_duration: 190,
+
+          // Registration features
+          avg_registration_date: -15,
+          num_unregistrations: 0,
+        });
+
+        const [prediction, setPrediction] = useState(null);
+        const [loading, setLoading] = useState(false);
+        const [apiStatus, setApiStatus] = useState("checking");
+        const [activeTab, setActiveTab] = useState("demographics");
+
+        useEffect(() => {
+          checkApiStatus();
+        }, []);
+
+        const checkApiStatus = async () => {
+          try {
+            const response = await fetch("http://localhost:5000/");
+            if (response.ok) {
+              const data = await response.json();
+              setApiStatus("connected");
+              console.log("✓ API Connected:", data);
+            } else {
+              setApiStatus("error");
+            }
+          } catch (error) {
+            setApiStatus("disconnected");
+            console.error("✗ API not reachable:", error.message);
+          }
+        };
+
+        const predictAnomaly = async () => {
+          setLoading(true);
+
+          try {
+            const API_URL = "http://localhost:5000";
+
+            // Convert all numeric fields to proper types
+            const payload = {
+              ...formData,
+              studied_credits: parseFloat(formData.studied_credits) || 0,
+              num_of_prev_attempts:
+                parseInt(formData.num_of_prev_attempts) || 0,
+              avg_score: parseFloat(formData.avg_score) || 0,
+              std_score: parseFloat(formData.std_score) || 0,
+              min_score: parseFloat(formData.min_score) || 0,
+              max_score: parseFloat(formData.max_score) || 0,
+              num_assessments: parseInt(formData.num_assessments) || 0,
+              avg_submission_date:
+                parseFloat(formData.avg_submission_date) || 0,
+              std_submission_date:
+                parseFloat(formData.std_submission_date) || 0,
+              score_range: parseFloat(formData.score_range) || 0,
+              total_clicks: parseInt(formData.total_clicks) || 0,
+              avg_clicks: parseFloat(formData.avg_clicks) || 0,
+              std_clicks: parseFloat(formData.std_clicks) || 0,
+              max_clicks: parseInt(formData.max_clicks) || 0,
+              num_interactions: parseInt(formData.num_interactions) || 0,
+              first_access: parseInt(formData.first_access) || 0,
+              last_access: parseInt(formData.last_access) || 0,
+              access_duration: parseInt(formData.access_duration) || 0,
+              avg_registration_date:
+                parseFloat(formData.avg_registration_date) || 0,
+              num_unregistrations: parseInt(formData.num_unregistrations) || 0,
+            };
+
+            console.log("Sending payload:", payload);
+
+            const response = await fetch(`${API_URL}/predict`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`API error ${response.status}: ${errorText}`);
+            }
+
+            const data = await response.json();
+            console.log("✓ Prediction result:", data);
+
+            setPrediction({
+              isAnomaly: data.isAtRisk,
+              riskScore: data.riskScore / 100,
+              anomalyScore: data.anomalyScore,
+              confidence: data.confidence,
+              factors: data.riskFactors || [],
+              recommendation: data.recommendation,
+            });
+          } catch (error) {
+            console.error("✗ Prediction error:", error);
+            alert(
+              `Failed to get prediction!\n\nError: ${error.message}\n\n` +
+                "Make sure the API is running:\npython app.py"
+            );
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        const handleInputChange = (e) => {
+          const { name, value } = e.target;
+          setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+          }));
+        };
+
+        const loadSampleData = (type) => {
+          if (type === "risk") {
+            setFormData({
+              ...formData,
+              avg_score: 35,
+              total_clicks: 150,
+              num_assessments: 3,
+              num_of_prev_attempts: 2,
+              avg_submission_date: 180,
+              num_interactions: 5,
+              first_access: 100,
+              min_score: 15,
+              max_score: 55,
+              score_range: 40,
+            });
+          } else if (type === "normal") {
+            setFormData({
+              ...formData,
+              avg_score: 75,
+              total_clicks: 850,
+              num_assessments: 8,
+              num_of_prev_attempts: 0,
+              avg_submission_date: 90,
+              num_interactions: 15,
+              first_access: 10,
+              min_score: 60,
+              max_score: 95,
+              score_range: 35,
+            });
+          } else if (type === "cheater") {
+            setFormData({
+              ...formData,
+              avg_score: 95,
+              total_clicks: 120,
+              num_assessments: 4,
+              num_of_prev_attempts: 0,
+              avg_submission_date: 200,
+              num_interactions: 3,
+              min_score: 90,
+              max_score: 100,
+            });
+          }
+          setPrediction(null);
+        };
+
+        const getApiStatusBadge = () => {
+          const badges = {
+            connected: {
+              color: "bg-green-500",
+              text: "API Connected ✓",
+              bgColor: "bg-green-50",
+            },
+            disconnected: {
+              color: "bg-red-500",
+              text: "API Disconnected ✗",
+              bgColor: "bg-red-50",
+            },
+            checking: {
+              color: "bg-yellow-500",
+              text: "Checking...",
+              bgColor: "bg-yellow-50",
+            },
+            error: {
+              color: "bg-red-500",
+              text: "API Error",
+              bgColor: "bg-red-50",
+            },
+          };
+          const badge = badges[apiStatus];
+          return (
+            <div
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg ${badge.bgColor}`}
+            >
+              <div
+                className={`w-2 h-2 rounded-full ${badge.color} ${
+                  apiStatus === "checking" ? "animate-pulse" : ""
+                }`}
+              ></div>
+              <span className="text-sm font-medium text-gray-700">
+                {badge.text}
+              </span>
+            </div>
+          );
+        };
+
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+            <div className="max-w-7xl mx-auto">
+              {/* Header */}
+              <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                      🎓 Student At-Risk Detection System
+                    </h1>
+                    <p className="text-gray-600">
+                      AI-powered early warning system for online education
+                    </p>
+                  </div>
+                  <div className="text-6xl">📊</div>
+                </div>
+
+                {getApiStatusBadge()}
+
+                <div className="grid grid-cols-3 gap-4 mt-6">
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="text-3xl mb-2">👥</div>
+                    <div className="text-2xl font-bold text-gray-800">
+                      28,785
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Students Analyzed
+                    </div>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <div className="text-3xl mb-2">📈</div>
+                    <div className="text-2xl font-bold text-gray-800">
+                      89.4%
+                    </div>
+                    <div className="text-sm text-gray-600">Model Accuracy</div>
+                  </div>
+                  <div className="bg-purple-50 rounded-lg p-4">
+                    <div className="text-3xl mb-2">✓</div>
+                    <div className="text-2xl font-bold text-gray-800">
+                      Isolation Forest
+                    </div>
+                    <div className="text-sm text-gray-600">Best Model</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Input Form */}
+                <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-gray-800">
+                      📝 Student Information
+                    </h2>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => loadSampleData("risk")}
+                        className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
+                      >
+                        🚨 At-Risk
+                      </button>
+                      <button
+                        onClick={() => loadSampleData("normal")}
+                        className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition"
+                      >
+                        ✅ Normal
+                      </button>
+                      <button
+                        onClick={() => loadSampleData("cheater")}
+                        className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition"
+                      >
+                        ⚠️ Cheater
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Tabs */}
+                  <div className="flex gap-2 mb-6 border-b overflow-x-auto">
+                    {[
+                      "demographics",
+                      "academic",
+                      "engagement",
+                      "registration",
+                    ].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-4 py-2 font-medium capitalize transition-colors whitespace-nowrap ${
+                          activeTab === tab
+                            ? "text-blue-600 border-b-2 border-blue-600"
+                            : "text-gray-500 hover:text-gray-700"
+                        }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Demographics Tab */}
+                  {activeTab === "demographics" && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Module Code
+                        </label>
+                        <select
+                          name="code_module"
+                          value={formData.code_module}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="AAA">AAA</option>
+                          <option value="BBB">BBB</option>
+                          <option value="CCC">CCC</option>
+                          <option value="DDD">DDD</option>
+                          <option value="EEE">EEE</option>
+                          <option value="FFF">FFF</option>
+                          <option value="GGG">GGG</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Presentation
+                        </label>
+                        <select
+                          name="code_presentation"
+                          value={formData.code_presentation}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="2013J">2013J</option>
+                          <option value="2014J">2014J</option>
+                          <option value="2013B">2013B</option>
+                          <option value="2014B">2014B</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Gender
+                        </label>
+                        <select
+                          name="gender"
+                          value={formData.gender}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="M">Male</option>
+                          <option value="F">Female</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Region
+                        </label>
+                        <select
+                          name="region"
+                          value={formData.region}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="East Anglian Region">
+                            East Anglian Region
+                          </option>
+                          <option value="Scotland">Scotland</option>
+                          <option value="North Western Region">
+                            North Western Region
+                          </option>
+                          <option value="South East Region">
+                            South East Region
+                          </option>
+                          <option value="West Midlands Region">
+                            West Midlands Region
+                          </option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Highest Education
+                        </label>
+                        <select
+                          name="highest_education"
+                          value={formData.highest_education}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="Lower Than A Level">
+                            Lower Than A Level
+                          </option>
+                          <option value="A Level or Equivalent">
+                            A Level or Equivalent
+                          </option>
+                          <option value="HE Qualification">
+                            HE Qualification
+                          </option>
+                          <option value="Post Graduate Qualification">
+                            Post Graduate
+                          </option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          IMD Band
+                        </label>
+                        <select
+                          name="imd_band"
+                          value={formData.imd_band}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="0-10%">0-10%</option>
+                          <option value="10-20%">10-20%</option>
+                          <option value="20-30%">20-30%</option>
+                          <option value="30-40%">30-40%</option>
+                          <option value="40-50%">40-50%</option>
+                          <option value="50-60%">50-60%</option>
+                          <option value="60-70%">60-70%</option>
+                          <option value="70-80%">70-80%</option>
+                          <option value="80-90%">80-90%</option>
+                          <option value="90-100%">90-100%</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Age Band
+                        </label>
+                        <select
+                          name="age_band"
+                          value={formData.age_band}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="0-35">0-35</option>
+                          <option value="35-55">35-55</option>
+                          <option value="55<=">55+</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Disability
+                        </label>
+                        <select
+                          name="disability"
+                          value={formData.disability}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="N">No</option>
+                          <option value="Y">Yes</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Studied Credits
+                        </label>
+                        <input
+                          type="number"
+                          name="studied_credits"
+                          value={formData.studied_credits}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Previous Attempts
+                        </label>
+                        <input
+                          type="number"
+                          name="num_of_prev_attempts"
+                          value={formData.num_of_prev_attempts}
+                          onChange={handleInputChange}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Academic Tab */}
+                  {activeTab === "academic" && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Average Score (0-100)
+                        </label>
+                        <input
+                          type="number"
+                          name="avg_score"
+                          value={formData.avg_score}
+                          onChange={handleInputChange}
+                          min="0"
+                          max="100"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Score Std Dev
+                        </label>
+                        <input
+                          type="number"
+                          name="std_score"
+                          value={formData.std_score}
+                          onChange={handleInputChange}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Minimum Score
+                        </label>
+                        <input
+                          type="number"
+                          name="min_score"
+                          value={formData.min_score}
+                          onChange={handleInputChange}
+                          min="0"
+                          max="100"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Maximum Score
+                        </label>
+                        <input
+                          type="number"
+                          name="max_score"
+                          value={formData.max_score}
+                          onChange={handleInputChange}
+                          min="0"
+                          max="100"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Score Range
+                        </label>
+                        <input
+                          type="number"
+                          name="score_range"
+                          value={formData.score_range}
+                          onChange={handleInputChange}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Number of Assessments
+                        </label>
+                        <input
+                          type="number"
+                          name="num_assessments"
+                          value={formData.num_assessments}
+                          onChange={handleInputChange}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Avg Submission Date
+                        </label>
+                        <input
+                          type="number"
+                          name="avg_submission_date"
+                          value={formData.avg_submission_date}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Submission Date Std Dev
+                        </label>
+                        <input
+                          type="number"
+                          name="std_submission_date"
+                          value={formData.std_submission_date}
+                          onChange={handleInputChange}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Engagement Tab */}
+                  {activeTab === "engagement" && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Total Clicks
+                        </label>
+                        <input
+                          type="number"
+                          name="total_clicks"
+                          value={formData.total_clicks}
+                          onChange={handleInputChange}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Average Clicks
+                        </label>
+                        <input
+                          type="number"
+                          name="avg_clicks"
+                          value={formData.avg_clicks}
+                          onChange={handleInputChange}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Clicks Std Dev
+                        </label>
+                        <input
+                          type="number"
+                          name="std_clicks"
+                          value={formData.std_clicks}
+                          onChange={handleInputChange}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Maximum Clicks
+                        </label>
+                        <input
+                          type="number"
+                          name="max_clicks"
+                          value={formData.max_clicks}
+                          onChange={handleInputChange}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Number of Interactions
+                        </label>
+                        <input
+                          type="number"
+                          name="num_interactions"
+                          value={formData.num_interactions}
+                          onChange={handleInputChange}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          First Access Day
+                        </label>
+                        <input
+                          type="number"
+                          name="first_access"
+                          value={formData.first_access}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Last Access Day
+                        </label>
+                        <input
+                          type="number"
+                          name="last_access"
+                          value={formData.last_access}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Access Duration (days)
+                        </label>
+                        <input
+                          type="number"
+                          name="access_duration"
+                          value={formData.access_duration}
+                          onChange={handleInputChange}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Registration Tab */}
+                  {activeTab === "registration" && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Avg Registration Date
+                        </label>
+                        <input
+                          type="number"
+                          name="avg_registration_date"
+                          value={formData.avg_registration_date}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Number of Unregistrations
+                        </label>
+                        <input
+                          type="number"
+                          name="num_unregistrations"
+                          value={formData.num_unregistrations}
+                          onChange={handleInputChange}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div className="col-span-2 bg-blue-50 p-4 rounded-lg">
+                        <p className="text-sm text-blue-800">
+                          <strong>💡 Tip:</strong> Negative registration dates
+                          indicate early registration (before course start).
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={predictAnomaly}
+                    disabled={loading || apiStatus !== "connected"}
+                    className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    {loading ? "⏳ Analyzing..." : "🔍 Predict Risk Level"}
+                  </button>
+
+                  {apiStatus !== "connected" && (
+                    <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-800">
+                        ⚠️ API not connected. Make sure to run:{" "}
+                        <code className="bg-yellow-100 px-2 py-1 rounded font-mono">
+                          python app.py
+                        </code>
+                      </p>
+                      <button
+                        onClick={checkApiStatus}
+                        className="mt-2 text-sm text-yellow-700 hover:text-yellow-900 underline"
+                      >
+                        Retry Connection
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Results Panel */}
+                <div className="space-y-6">
+                  {prediction ? (
+                    <>
+                      <div
+                        className={`bg-white rounded-2xl shadow-lg p-6 ${
+                          prediction.isAnomaly
+                            ? "ring-2 ring-red-500"
+                            : "ring-2 ring-green-500"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-xl font-bold text-gray-800">
+                            Prediction Result
+                          </h3>
+                          <div className="text-4xl">
+                            {prediction.isAnomaly ? "🚨" : "✅"}
+                          </div>
+                        </div>
+
+                        <div
+                          className={`text-center py-6 rounded-xl ${
+                            prediction.isAnomaly ? "bg-red-50" : "bg-green-50"
+                          }`}
+                        >
+                          <div
+                            className={`text-4xl font-bold mb-2 ${
+                              prediction.isAnomaly
+                                ? "text-red-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {prediction.isAnomaly ? "AT RISK ⚠️" : "ON TRACK ✓"}
+                          </div>
+                          <div className="text-gray-600 text-lg font-semibold">
+                            Risk Score:{" "}
+                            {(prediction.riskScore * 100).toFixed(1)}%
+                          </div>
+                          <div className="text-sm text-gray-500 mt-1">
+                            Confidence:{" "}
+                            {(prediction.confidence * 100).toFixed(1)}%
+                          </div>
+                          {prediction.anomalyScore && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              Anomaly Score:{" "}
+                              {prediction.anomalyScore.toFixed(3)}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-4">
+                          <div className="text-sm font-medium text-gray-700 mb-2">
+                            Risk Level Indicator
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div
+                              className={`h-3 rounded-full transition-all ${
+                                prediction.riskScore > 0.7
+                                  ? "bg-red-500"
+                                  : prediction.riskScore > 0.4
+                                  ? "bg-yellow-500"
+                                  : "bg-green-500"
+                              }`}
+                              style={{
+                                width: `${Math.max(
+                                  5,
+                                  prediction.riskScore * 100
+                                )}%`,
+                              }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>Low Risk</span>
+                            <span>Medium Risk</span>
+                            <span>High Risk</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {prediction.factors && prediction.factors.length > 0 && (
+                        <div className="bg-white rounded-2xl shadow-lg p-6">
+                          <h3 className="text-xl font-bold text-gray-800 mb-4">
+                            🎯 Risk Factors Identified
+                          </h3>
+                          <div className="space-y-3">
+                            {prediction.factors.map((factor, idx) => (
+                              <div
+                                key={idx}
+                                className={`border-l-4 pl-3 py-2 rounded-r ${
+                                  factor.severity === "high"
+                                    ? "border-red-500 bg-red-50"
+                                    : factor.severity === "medium"
+                                    ? "border-yellow-500 bg-yellow-50"
+                                    : "border-blue-500 bg-blue-50"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="font-medium text-gray-800 text-sm">
+                                    {factor.factor}
+                                  </div>
+                                  <span
+                                    className={`text-xs px-2 py-1 rounded font-medium ${
+                                      factor.severity === "high"
+                                        ? "bg-red-100 text-red-700"
+                                        : factor.severity === "medium"
+                                        ? "bg-yellow-100 text-yellow-700"
+                                        : "bg-blue-100 text-blue-700"
+                                    }`}
+                                  >
+                                    {factor.severity?.toUpperCase()}
+                                  </span>
+                                </div>
+                                {factor.description && (
+                                  <div className="text-xs text-gray-600 mb-1">
+                                    {factor.description}
+                                  </div>
+                                )}
+                                <div className="text-xs text-gray-500">
+                                  Value: <strong>{factor.value}</strong>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {prediction.recommendation && (
+                        <div
+                          className={`rounded-2xl p-6 border ${
+                            prediction.isAnomaly
+                              ? "bg-orange-50 border-orange-200"
+                              : "bg-blue-50 border-blue-200"
+                          }`}
+                        >
+                          <h3
+                            className={`text-lg font-bold mb-3 ${
+                              prediction.isAnomaly
+                                ? "text-orange-800"
+                                : "text-blue-800"
+                            }`}
+                          >
+                            💡 Recommendation
+                          </h3>
+                          <p
+                            className={`${
+                              prediction.isAnomaly
+                                ? "text-orange-900"
+                                : "text-blue-900"
+                            }`}
+                          >
+                            {prediction.recommendation}
+                          </p>
+
+                          {prediction.isAnomaly && (
+                            <div className="mt-4 space-y-2">
+                              <p className="text-sm font-semibold text-orange-800">
+                                Suggested Actions:
+                              </p>
+                              <ul className="space-y-1 text-sm text-orange-900">
+                                <li className="flex items-start">
+                                  <span className="mr-2">•</span>
+                                  <span>
+                                    Schedule one-on-one meeting with academic
+                                    advisor
+                                  </span>
+                                </li>
+                                <li className="flex items-start">
+                                  <span className="mr-2">•</span>
+                                  <span>
+                                    Provide additional learning resources and
+                                    support
+                                  </span>
+                                </li>
+                                <li className="flex items-start">
+                                  <span className="mr-2">•</span>
+                                  <span>Monitor engagement metrics weekly</span>
+                                </li>
+                                <li className="flex items-start">
+                                  <span className="mr-2">•</span>
+                                  <span>
+                                    Consider peer mentoring or study groups
+                                  </span>
+                                </li>
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+                        <div className="text-6xl mb-4">📤</div>
+                        <p className="text-gray-600 mb-2 font-medium">
+                          Ready to Analyze
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Enter student information and click
+                          <br />
+                          "Predict Risk Level" to begin analysis
+                        </p>
+                      </div>
+                      <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+                        <a href="/batch.html">batch predection </a>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="mt-6 bg-white rounded-2xl shadow-lg p-6">
+                <div className="text-center text-sm text-gray-600">
+                  <p className="font-semibold mb-2">📊 Model Information</p>
+                  <p>
+                    <strong>Algorithm:</strong> Isolation Forest (Tuned) |
+                    <strong> Accuracy:</strong> 89.4% |
+                    <strong> F1-Score:</strong> 0.8741
+                  </p>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Dataset: Open University Learning Analytics (28,785
+                    students, 28 features)
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Features include: Demographics, Academic Performance,
+                    Engagement Metrics, and Registration Data
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      // Render the app
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<StudentAnomalyDetector />);
+    </script>
+  </body>
+</html>
