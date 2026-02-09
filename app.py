@@ -458,7 +458,10 @@ def predict_batch():
         print(f"📥 Batch prediction for {len(students_data)} students")
         
         df = pd.DataFrame(students_data)
-        student_ids = df.get('student_id', range(len(df))).tolist()
+        if 'student_id' in df.columns:
+            student_ids = df['student_id'].tolist()
+        else:
+            student_ids = list(range(len(df)))
         
         X = preprocess_input(df)
         predictions = model.predict(X)
