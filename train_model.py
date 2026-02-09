@@ -1,4 +1,14 @@
-# ... (previous imports)
+"""
+Simplified Student Anomaly Detection Model Training
+This script trains the model and saves the required files for the API
+"""
+
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.ensemble import IsolationForest
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, f1_score
 import joblib
 import warnings
 import wandb
@@ -25,34 +35,6 @@ DATA_PATH = 'data/'  # Change this to your data folder path
 # artifact = wandb.Artifact('student-data', type='dataset')
 # artifact.add_dir(DATA_PATH)
 # wandb.log_artifact(artifact)
-
-students = pd.read_csv(f'{DATA_PATH}studentInfo.csv')
-assessments = pd.read_csv(f'{DATA_PATH}studentAssessment.csv')
-vle = pd.read_csv(f'{DATA_PATH}studentVle.csv')
-student_registration = pd.read_csv(f'{DATA_PATH}studentRegistration.csv')
-
-print(f"✓ Students: {students.shape}")
-print(f"✓ Assessments: {assessments.shape}")
-print(f"✓ VLE: {vle.shape}")
-print(f"✓ Registration: {student_registration.shape}")
-
-# ... (Feature Engineering and Merge steps remain same, but for brevity I will focus on where I add W&B logging) ... 
-# actually, I need to be careful with replace_file_content. I should probably use multi_replace or just read the file again to be safe about line numbers if I am not replacing everything. 
-# BUT, since I want to wrap the whole thing or insert at specific points, maybe rewriting the file with the changes is safer given the complexity of insertions.
-# Let's try to be precise with replace_file_content on the imports and the end.
-
-# Wait, the tool definition says "This must be a complete drop-in replacement of the TargetContent". 
-# I will use multi_replace to insert imports and then the end block.
-
-
-
-# ============================================================================
-# STEP 1: Load Data
-# ============================================================================
-print("\n[1/7] Loading datasets...")
-
-# Update these paths to where you extracted the dataset
-DATA_PATH = 'data/'  # Change this to your data folder path
 
 students = pd.read_csv(f'{DATA_PATH}studentInfo.csv')
 assessments = pd.read_csv(f'{DATA_PATH}studentAssessment.csv')
@@ -190,7 +172,6 @@ model = IsolationForest(
 model.fit(X_train)
 print("✓ Model trained successfully")
 
-# Evaluate
 # Evaluate
 y_pred = model.predict(X_test)
 y_pred = np.where(y_pred == -1, 1, 0)
