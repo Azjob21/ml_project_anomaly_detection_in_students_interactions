@@ -1,4 +1,10 @@
 import pytest
+import sys
+import os
+
+# Add parent directory to path to allow importing app
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from app import calculate_risk_score_advanced, analyze_risk_factors
 
 def test_risk_calculation_high_risk():
