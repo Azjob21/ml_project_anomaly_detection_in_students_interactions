@@ -1,21 +1,50 @@
-"""
-Simplified Student Anomaly Detection Model Training
-This script trains the model and saves the required files for the API
-"""
-
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.ensemble import IsolationForest
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, f1_score
+# ... (previous imports)
 import joblib
 import warnings
+import wandb
+import os
+
 warnings.filterwarnings('ignore')
+
+# Initialize W&B
+wandb.init(project="student-anomaly-detection", job_type="train")
 
 print("="*60)
 print("Starting Model Training...")
 print("="*60)
+
+# ============================================================================
+# STEP 1: Load Data
+# ============================================================================
+print("\n[1/7] Loading datasets...")
+
+# Update these paths to where you extracted the dataset
+DATA_PATH = 'data/'  # Change this to your data folder path
+
+# Log data as artifact (optional, good for versioning)
+# artifact = wandb.Artifact('student-data', type='dataset')
+# artifact.add_dir(DATA_PATH)
+# wandb.log_artifact(artifact)
+
+students = pd.read_csv(f'{DATA_PATH}studentInfo.csv')
+assessments = pd.read_csv(f'{DATA_PATH}studentAssessment.csv')
+vle = pd.read_csv(f'{DATA_PATH}studentVle.csv')
+student_registration = pd.read_csv(f'{DATA_PATH}studentRegistration.csv')
+
+print(f"✓ Students: {students.shape}")
+print(f"✓ Assessments: {assessments.shape}")
+print(f"✓ VLE: {vle.shape}")
+print(f"✓ Registration: {student_registration.shape}")
+
+# ... (Feature Engineering and Merge steps remain same, but for brevity I will focus on where I add W&B logging) ... 
+# actually, I need to be careful with replace_file_content. I should probably use multi_replace or just read the file again to be safe about line numbers if I am not replacing everything. 
+# BUT, since I want to wrap the whole thing or insert at specific points, maybe rewriting the file with the changes is safer given the complexity of insertions.
+# Let's try to be precise with replace_file_content on the imports and the end.
+
+# Wait, the tool definition says "This must be a complete drop-in replacement of the TargetContent". 
+# I will use multi_replace to insert imports and then the end block.
+
+
 
 # ============================================================================
 # STEP 1: Load Data
@@ -162,6 +191,7 @@ model.fit(X_train)
 print("✓ Model trained successfully")
 
 # Evaluate
+# Evaluate
 y_pred = model.predict(X_test)
 y_pred = np.where(y_pred == -1, 1, 0)
 
@@ -170,6 +200,14 @@ print(f"\nModel Performance:")
 print(f"  F1-Score: {f1:.4f}")
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred, target_names=['Normal', 'Anomaly']))
+
+# Log metrics to W&B
+wandb.log({
+    "f1_score": f1,
+    "contamination": contamination_rate,
+    "n_estimators": 200,
+    "random_state": 42
+})
 
 # ============================================================================
 # STEP 7: Save Models and Preprocessors
@@ -181,16 +219,30 @@ import os
 os.makedirs('models', exist_ok=True)
 
 # Save files
-joblib.dump(model, 'models/best_anomaly_model.pkl')
-joblib.dump(scaler, 'models/scaler.pkl')
-joblib.dump(label_encoders, 'models/label_encoders.pkl')
+model_path = 'models/best_anomaly_model.pkl'
+scaler_path = 'models/scaler.pkl'
+encoders_path = 'models/label_encoders.pkl'
 
-print("✓ Model saved to: models/best_anomaly_model.pkl")
-print("✓ Scaler saved to: models/scaler.pkl")
-print("✓ Encoders saved to: models/label_encoders.pkl")
+joblib.dump(model, model_path)
+joblib.dump(scaler, scaler_path)
+joblib.dump(label_encoders, encoders_path)
+
+print(f"✓ Model saved to: {model_path}")
+print(f"✓ Scaler saved to: {scaler_path}")
+print(f"✓ Encoders saved to: {encoders_path}")
+
+# Log artifacts to W&B
+artifact = wandb.Artifact('anomaly-detection-model', type='model')
+artifact.add_file(model_path)
+artifact.add_file(scaler_path)
+artifact.add_file(encoders_path)
+wandb.log_artifact(artifact)
+
+# Finish the run
+wandb.finish()
 
 print("\n" + "="*60)
-print("✓ TRAINING COMPLETE!")
+print("✓ TRAINING COMPLETE! W&B Run finished.")
 print("="*60)
 print("\nYou can now run your Flask API with:")
 print("  python app.py")
