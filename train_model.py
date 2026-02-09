@@ -1,8 +1,3 @@
-"""
-Simplified Student Anomaly Detection Model Training
-This script trains the model and saves the required files for the API
-"""
-
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, LabelEncoder
